@@ -12,3 +12,6 @@ vdo_lv_name: vdolv  # name
 vdo_phys_size: 50G  # The underlying VDO volume size
 vdo_virt_size: 100G # The thin-provisioned LV on top
 vdo_slab_size: 1024 # Slab size in megabytes
+
+# Mountpoint
+vdo_mount_point: /mnt/test

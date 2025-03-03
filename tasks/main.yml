@@ -25,3 +25,20 @@
     lv: "{{ vdo_lv_name }}"
     size: "{{ vdo_phys_size }}"
     opts: "--type vdo --vdosettings 'vdo_slab_size_mb={{ vdo_slab_size }}' --virtualsize {{ vdo_virt_size }}"
+
+- name: Create vdo mount point
+  ansible.builtin.file:
+    path: "{{ vdo_mount_point }}"
+    state: directory
+    mode: '0755'
+- name: Format the xfs filesystem
+  community.general.filesystem:
+    fstype: xfs
+    opts: -K # no-discard is used on VDO
+    dev: "/dev/{{ vdo_vg_name }}/{{ vdo_lv_name }}"
+- name: Mount the lv
+  ansible.posix.mount:
+    path: "{{ vdo_mount_point }}"
+    src: "/dev/{{ vdo_vg_name }}/{{ vdo_lv_name }}"
+    fstype: xfs
+    state: mounted
