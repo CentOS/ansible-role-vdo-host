@@ -1,3 +1,4 @@
+---
 # Defaults tasks for role vdo-host
 
 - name: Importing specific distro variables
@@ -8,3 +9,19 @@
   tags:
     - vars
 
+- name: Install the VDO packages
+  ansible.builtin.dnf:
+    name: "{{ vdo_pkgs_list }}"
+    state: installed
+
+- name: Create the volume group
+  community.general.lvg:
+    vg: "{{ vdo_vg_name }}"
+    pvs: "{{ vdo_pv_disks }}"
+
+- name: Setup VDO storage pool
+  community.general.lvol:
+    vg: "{{ vdo_vg_name }}"
+    lv: "{{ vdo_lv_name }}"
+    size: "{{ vdo_phys_size }}"
+    opts: "--type vdo --vdosettings 'vdo_slab_size_mb={{ vdo_slab_size }}' --virtualsize {{ vdo_virt_size }}"

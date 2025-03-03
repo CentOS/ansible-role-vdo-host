@@ -1,0 +1,6 @@
+---
+
+vdo_pkgs_list:
+  - lvm2
+  - kmod-kvdo
+  - vdo
