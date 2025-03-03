@@ -15,3 +15,5 @@ vdo_slab_size: 1024 # Slab size in megabytes
 
 # Mountpoint
 vdo_mount_point: /mnt/test
+vdo_fs_type: ext4
+vdo_fs_opts: -E nodiscard
