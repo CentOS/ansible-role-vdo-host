@@ -7,13 +7,21 @@ vdo_pv_disks: /dev/notadisk
 # Volume group name
 vdo_vg_name: vdovg
 
-# Logical volume settings
-vdo_lv_name: vdolv  # name
-vdo_phys_size: 50G  # The underlying VDO volume size
-vdo_virt_size: 100G # The thin-provisioned LV on top
-vdo_slab_size: 1024 # Slab size in megabytes
-
-# Mountpoint
-vdo_mount_point: /mnt/test
-vdo_fs_type: ext4
-vdo_fs_opts: -E nodiscard
+# LVs & Mountpoints
+vdo_configs:
+  - vg_name: vdovg
+    lv_name: lv1
+    phys_size: 10G
+    virt_size: 50G
+    slab_size: 1024
+    mount_point: /mnt/vdo1
+    fs_type: ext4
+    fs_opts: -E nodiscard
+  - vg_name: vdovg
+    lv_name: lv2
+    phys_size: 20G
+    virt_size: 100G
+    slab_size: 2048
+    mount_point: /mnt/vdo2
+    fs_type: xfs
+    fs_opts: -K
