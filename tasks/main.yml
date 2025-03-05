@@ -101,3 +101,5 @@
     fstype: "{{ item.fs_type }}"
     state: mounted
   loop: "{{ vdo_configs }}"
+
+- include_tasks: monitoring.yml

@@ -25,3 +25,9 @@ vdo_configs:
     mount_point: /mnt/vdo2
     fs_type: xfs
     fs_opts: -K
+
+# Zabbix/monitoring part
+mirror_zabbix_templates:
+  - Template CentOS VDO server
+mirror_zabbix_groups:
+  - CentOS VDO servers

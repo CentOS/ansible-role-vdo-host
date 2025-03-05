@@ -1,0 +1,16 @@
+#!/bin/bash
+# called by Zabbix to report vpool space status
+
+date=$(date +%s)
+
+# Loop over VPools:
+
+{% for item in vdo_pools.results %}
+# Percentage use
+perc=$(vdostats --si | grep {{ item.stdout }} | tr -s ' ' | cut -f 5 -d ' ')
+zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -k vdo.{{ item.stdout }}.percent -o '$date - $perc' >/dev/null
+
+# Absolute use (GB)
+size=$(vdostats --si | grep {{ item.stdout }} | tr -s ' ' | cut -f 3 -d ' ')
+zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -k vdo.{{ item.stdout }}.size -o '$date - $size' >/dev/null
+{% endfor %}
