@@ -14,10 +14,6 @@
     name: "{{ vdo_pkgs_list }}"
     state: installed
 
-- name: Create the volume group
-  community.general.lvg:
-    vg: "{{ vdo_vg_name }}"
-    pvs: "{{ vdo_pv_disks }}"
 
 # "lvcreate --type vdo" creates two LVs. Thus, we need to check and see if it already exists,
 # if no, create a single LV with the right options
