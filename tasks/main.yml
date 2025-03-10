@@ -25,21 +25,6 @@
   loop: "{{ vdo_configs }}"
   register: vdo_devices
 
-# If there is more than one VPool, it's not immediately clear which VPool belongs to which
-# LV. "lvdisplay" can tell us
-- name: Check which LV belongs to which Pool
-  ansible.builtin.shell:
-    cmd: |
-      set -o pipefail
-      lvs --noheadings --unbuffered -o pool_lv /dev/{{ item.vg_name }}/{{ item.lv_name }} | tr -d '[:space:]'
-    executable: /bin/bash
-  loop: "{{ vdo_configs }}"
-  loop_control:
-    index_var: idx
-  changed_when: false
-  when: vdo_devices.results[idx].stat.exists
-  register: vdo_pools
-
 # We run this if the LV does not exist, it creates both devices
 - name: Setup VDO pools & LVs
   community.general.lvol:
@@ -50,7 +35,23 @@
   loop: "{{ vdo_configs }}"
   loop_control:
     index_var: idx
+    label: "{{ item.lv_name }}"
   when: not vdo_devices.results[idx].stat.exists
+
+# If there is more than one VPool, it's not immediately clear which VPool belongs to which
+# LV. "lvdisplay" can tell us
+- name: Check which LV belongs to which Pool
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      lvs --noheadings --unbuffered -o pool_lv /dev/{{ item.vg_name }}/{{ item.lv_name }} | tr -d '[:space:]'
+    executable: /bin/bash
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    label: "{{ item.lv_name }}"
+    index_var: idx
+  changed_when: false
+  register: vdo_pools
 
 # Otherwise we manage them separately, using the output of vdo_pools to map them together
 - name: Manage VDO storage Vpools
@@ -58,9 +59,9 @@
     vg: "{{ item.vg_name }}"
     lv: "{{ vdo_pools.results[idx].stdout }}"
     size: "{{ item.phys_size }}"
-    resizefs: true
   loop: "{{ vdo_configs }}"
   loop_control:
+    label: "{{ item.lv_name }}"
     index_var: idx
   when: vdo_devices.results[idx].stat.exists and vdo_pools.results[idx].stdout | length > 0
 
@@ -72,6 +73,7 @@
     resizefs: true
   loop: "{{ vdo_configs }}"
   loop_control:
+    label: "{{ item.lv_name }}"
     index_var: idx
   when: vdo_devices.results[idx].stat.exists and vdo_pools.results[idx].stdout | length > 0
 
@@ -82,14 +84,18 @@
     state: directory
     mode: '0755'
   loop: "{{ vdo_configs }}"
-
+  loop_control:
+    label: "{{ item.lv_name }}"
+ 
 - name: Format the filesystems
   community.general.filesystem:
     fstype: "{{ item.fs_type }}"
     opts: "{{ item.fs_opts }}"
     dev: "/dev/{{ item.vg_name }}/{{ item.lv_name }}"
   loop: "{{ vdo_configs }}"
-
+  loop_control:
+    label: "{{ item.lv_name }}"
+ 
 - name: Mount the LVs
   ansible.posix.mount:
     path: "{{ item.mount_point }}"
@@ -97,5 +103,9 @@
     fstype: "{{ item.fs_type }}"
     state: mounted
   loop: "{{ vdo_configs }}"
-
+  loop_control:
+    label: "{{ item.lv_name }}"
+  
 - include_tasks: monitoring.yml
+  tags:
+    - monitoring
