@@ -62,7 +62,7 @@
   loop: "{{ vdo_configs }}"
   loop_control:
     index_var: idx
-  when: vdo_pools.results[idx].stdout | length > 0
+  when: vdo_devices.results[idx].stat.exists and vdo_pools.results[idx].stdout | length > 0
 
 - name: Manage VDO thin LVs
   community.general.lvol:
@@ -73,7 +73,7 @@
   loop: "{{ vdo_configs }}"
   loop_control:
     index_var: idx
-  when: vdo_pools.results[idx].stdout | length > 0
+  when: vdo_devices.results[idx].stat.exists and vdo_pools.results[idx].stdout | length > 0
 
 # Either way, after creation / updates we can manage the filesystems and mountpoints
 - name: Create vdo mount points
