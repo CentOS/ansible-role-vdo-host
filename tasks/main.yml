@@ -38,8 +38,8 @@
     label: "{{ item.lv_name }}"
   when: not vdo_devices.results[idx].stat.exists
 
-# If there is more than one VPool, it's not immediately clear which VPool belongs to which
-# LV. "lvdisplay" can tell us
+# If there is more than one VPool, it's not immediately clear which VPool belongs to which LV
+# "lvs" can tell us, but we need to tidy the output, it has leading spaces
 - name: Check which LV belongs to which Pool
   ansible.builtin.shell:
     cmd: |
@@ -63,7 +63,7 @@
   loop_control:
     label: "{{ item.lv_name }}"
     index_var: idx
-  when: vdo_devices.results[idx].stat.exists and vdo_pools.results[idx].stdout | length > 0
+  when: vdo_pools.results[idx].stdout | length > 0
 
 - name: Manage VDO thin LVs
   community.general.lvol:
@@ -75,7 +75,7 @@
   loop_control:
     label: "{{ item.lv_name }}"
     index_var: idx
-  when: vdo_devices.results[idx].stat.exists and vdo_pools.results[idx].stdout | length > 0
+  when: vdo_pools.results[idx].stdout | length > 0
 
 # Either way, after creation / updates we can manage the filesystems and mountpoints
 - name: Create vdo mount points
@@ -86,7 +86,7 @@
   loop: "{{ vdo_configs }}"
   loop_control:
     label: "{{ item.lv_name }}"
- 
+
 - name: Format the filesystems
   community.general.filesystem:
     fstype: "{{ item.fs_type }}"
@@ -95,7 +95,7 @@
   loop: "{{ vdo_configs }}"
   loop_control:
     label: "{{ item.lv_name }}"
- 
+
 - name: Mount the LVs
   ansible.posix.mount:
     path: "{{ item.mount_point }}"
@@ -105,7 +105,7 @@
   loop: "{{ vdo_configs }}"
   loop_control:
     label: "{{ item.lv_name }}"
-  
+
 - include_tasks: monitoring.yml
   tags:
     - monitoring
