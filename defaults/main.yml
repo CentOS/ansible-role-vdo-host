@@ -28,7 +28,7 @@
 vdo_configs: []
 
 # Zabbix/monitoring part
-mirror_zabbix_templates:
+vdo_zabbix_templates:
   - Template CentOS VDO server
-mirror_zabbix_groups:
+vdo_zabbix_groups:
   - CentOS VDO servers

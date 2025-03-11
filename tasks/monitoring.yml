@@ -11,6 +11,21 @@
   delegate_to: "{{ zabbix_api_srv }}"
   when: zabbix_api_srv is defined
 
+# Setup LLD
+- name: Distributing LLD script
+  copy:
+    src: files/zabbix-vdo-lld.sh
+    dest: /usr/lib/zabbix/zabbix-vdo-lld.sh
+    mode: 0750
+    owner: root
+
+- name: Sending LLD items to zabbix
+  cron:
+    name: "VDO Low-Level Discovery"
+    job: /usr/lib/zabbix/zabbix-vdo-lld.sh
+    minute: "*/10"
+    user: root
+
 - name: Zabbix check for VPool Space
   template:
     src: zabbix-check-vpool-space.sh.j2
