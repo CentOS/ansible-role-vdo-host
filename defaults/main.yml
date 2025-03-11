@@ -1,1 +1,34 @@
+---
 # Defaults variables for role vdo-host
+
+# This role assume that VGs are created by baseline/kickstart deployments
+
+# LVs & Mountpoints
+# In the following example, phys_size will be the VDO LV size in the existing VG
+# and virt_size will be the presented LV to the host
+#
+#vdo_configs:
+#  - vg_name: vdovg
+#    lv_name: lv1
+#    phys_size: 10G
+#    virt_size: 50G
+#    slab_size: 1024 # in MB
+#    mount_point: /mnt/vdo1
+#    fs_type: ext4
+#    fs_opts: -E nodiscard
+#  - vg_name: vdovg
+#    lv_name: lv2
+#    phys_size: 20G
+#    virt_size: 100G
+#    slab_size: 2048
+#    mount_point: /mnt/vdo2
+#    fs_type: xfs
+#    fs_opts: -K
+
+vdo_configs: []
+
+# Zabbix/monitoring part
+vdo_zabbix_templates:
+  - Template CentOS VDO server
+vdo_zabbix_groups:
+  - CentOS VDO servers

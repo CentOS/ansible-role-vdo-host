@@ -1,3 +1,4 @@
+---
 # Defaults tasks for role vdo-host
 
 - name: Importing specific distro variables
@@ -8,3 +9,103 @@
   tags:
     - vars
 
+- name: Install the VDO packages
+  ansible.builtin.dnf:
+    name: "{{ vdo_pkgs_list }}"
+    state: installed
+
+
+# "lvcreate --type vdo" creates two LVs. Thus, we need to check and see if it already exists,
+# if no, create a single LV with the right options
+# if yes, manage both the named LV, and the underlying VPool LV
+
+- name: Check if the VDO devices exist
+  ansible.builtin.stat:
+    path: "/dev/{{ item.vg_name }}/{{ item.lv_name }}"
+  loop: "{{ vdo_configs }}"
+  register: vdo_devices
+
+# We run this if the LV does not exist, it creates both devices
+- name: Setup VDO pools & LVs
+  community.general.lvol:
+    vg: "{{ item.vg_name }}"
+    lv: "{{ item.lv_name }}"
+    size: "{{ item.phys_size }}"
+    opts: "--type vdo --vdosettings 'vdo_slab_size_mb={{ item.slab_size }}' --virtualsize {{ item.virt_size }}"
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    index_var: idx
+    label: "{{ item.lv_name }}"
+  when: not vdo_devices.results[idx].stat.exists
+
+# If there is more than one VPool, it's not immediately clear which VPool belongs to which LV
+# "lvs" can tell us, but we need to tidy the output, it has leading spaces
+- name: Check which LV belongs to which Pool
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      lvs --noheadings --unbuffered -o pool_lv /dev/{{ item.vg_name }}/{{ item.lv_name }} | tr -d '[:space:]'
+    executable: /bin/bash
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    label: "{{ item.lv_name }}"
+    index_var: idx
+  changed_when: false
+  register: vdo_pools
+
+# Otherwise we manage them separately, using the output of vdo_pools to map them together
+- name: Manage VDO storage Vpools
+  community.general.lvol:
+    vg: "{{ item.vg_name }}"
+    lv: "{{ vdo_pools.results[idx].stdout }}"
+    size: "{{ item.phys_size }}"
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    label: "{{ item.lv_name }}"
+    index_var: idx
+  when: vdo_pools.results[idx].stdout | length > 0
+
+- name: Manage VDO thin LVs
+  community.general.lvol:
+    vg: "{{ item.vg_name }}"
+    lv: "{{ item.lv_name }}"
+    size: "{{ item.virt_size }}"
+    resizefs: true
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    label: "{{ item.lv_name }}"
+    index_var: idx
+  when: vdo_pools.results[idx].stdout | length > 0
+
+# Either way, after creation / updates we can manage the filesystems and mountpoints
+- name: Create vdo mount points
+  ansible.builtin.file:
+    path: "{{ item.mount_point }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    label: "{{ item.lv_name }}"
+
+- name: Format the filesystems
+  community.general.filesystem:
+    fstype: "{{ item.fs_type }}"
+    opts: "{{ item.fs_opts }}"
+    dev: "/dev/{{ item.vg_name }}/{{ item.lv_name }}"
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    label: "{{ item.lv_name }}"
+
+- name: Mount the LVs
+  ansible.posix.mount:
+    path: "{{ item.mount_point }}"
+    src: "/dev/{{ item.vg_name }}/{{ item.lv_name }}"
+    fstype: "{{ item.fs_type }}"
+    state: mounted
+  loop: "{{ vdo_configs }}"
+  loop_control:
+    label: "{{ item.lv_name }}"
+
+- include_tasks: monitoring.yml
+  tags:
+    - monitoring
