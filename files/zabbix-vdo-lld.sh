@@ -5,6 +5,8 @@
 # Called by: cron
 # Managed by: Ansible (don't edit)
 
+PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+
 # some variables
 lld_file="/etc/zabbix/vdo-lld"
 
