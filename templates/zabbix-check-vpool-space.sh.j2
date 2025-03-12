@@ -10,6 +10,8 @@ date=$(date +%s)
 {% for item in vdo_pools.results %}
 # Percentage use
 perc=$(vdostats --si | grep {{ item.stdout }} | tr -s ' ' | cut -f 5 -d ' '| tr -d '%')
-zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -k vdo.[{{ item.stdout }}] -o $perc >/dev/null
+zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -k vdo.use.[{{ item.stdout }}] -o $perc >/dev/null
 
+saving=$(vdostats --si | grep {{ item.stdout }} | tr -s ' ' | cut -f 6 -d ' '| tr -d '%')
+zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -k vdo.save.[{{ item.stdout }}] -o $save >/dev/null
 {% endfor %}
