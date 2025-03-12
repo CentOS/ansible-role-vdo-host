@@ -1,6 +1,8 @@
 #!/bin/bash
 # called by Zabbix to report vpool space status
 
+PATH=$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+
 date=$(date +%s)
 
 # Loop over VPools:
